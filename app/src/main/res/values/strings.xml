@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Device Policy Manager</string>
+    <string name="device_admin_enabled">Device Admin Enabled</string>
+    <string name="device_admin_disabled">Device Admin Disabled</string>
+    <string name="enable_device_admin">Enable Device Admin</string>
+    <string name="apply_policy">Apply Policy</string>
+    <string name="policy_applied">Policy Applied</string>
+    <string name="policy_failed">Failed to apply policy</string>
+</resources>
+

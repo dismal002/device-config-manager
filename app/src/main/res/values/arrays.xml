@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="system_update_policies">
+        <item>Automatic</item>
+        <item>Windowed</item>
+        <item>Postponed</item>
+    </string-array>
+    
+    <string-array name="permission_policies">
+        <item>Prompt (0)</item>
+        <item>Auto Grant (1)</item>
+        <item>Auto Deny (2)</item>
+    </string-array>
+    
+    <string-array name="password_qualities">
+        <item>Unspecified (0)</item>
+        <item>Something (65536)</item>
+        <item>Numeric Complex (393216)</item>
+        <item>Alphanumeric (327680)</item>
+        <item>Complex (327680)</item>
+    </string-array>
+</resources>
+

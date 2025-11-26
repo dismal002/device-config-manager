@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Number of columns in dashboard grid -->
+    <integer name="dashboard_num_columns">2</integer>
+</resources>
+

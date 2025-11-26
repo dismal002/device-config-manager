@@ -1,0 +1,23 @@
+package com.deviceconfig.policymanager;
+
+import android.content.Context;
+import android.content.Intent;
+
+public class DeviceAdminReceiver extends android.app.admin.DeviceAdminReceiver {
+    
+    @Override
+    public void onEnabled(Context context, Intent intent) {
+        super.onEnabled(context, intent);
+    }
+
+    @Override
+    public void onDisabled(Context context, Intent intent) {
+        super.onDisabled(context, intent);
+    }
+
+    @Override
+    public CharSequence onDisableRequested(Context context, Intent intent) {
+        return "Device admin is being disabled";
+    }
+}
+
