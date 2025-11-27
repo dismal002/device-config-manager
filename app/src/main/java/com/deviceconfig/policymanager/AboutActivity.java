@@ -35,6 +35,37 @@ public class AboutActivity extends PolicyDetailActivity {
         // Project Repository
         addHeaderPreference("Project");
         addClickablePreference("GitHub Repository", "View source", v -> openUrl("https://github.com/dismal002/device-config-manager"));
+        
+        // Policy Export
+        addHeaderPreference("Scoring");
+        addInfoPreference("Policy state is automatically exported every 15 minutes for scoring engines");
+        addClickablePreference("Sync Now", "Manually export current policy state", v -> exportPolicyState());
+        addClickablePreference("View Export Location", "Show file path", v -> showExportLocation());
+    }
+    
+    private void exportPolicyState() {
+        PolicyExporter exporter = new PolicyExporter(this);
+        boolean success = exporter.exportPolicyState();
+        if (success) {
+            showToast("Policy state synced successfully");
+        } else {
+            showToast("Failed to sync policy state");
+        }
+    }
+    
+    private void showExportLocation() {
+        PolicyExporter exporter = new PolicyExporter(this);
+        String path = exporter.getExportFilePath();
+        showToast("Export location: " + path);
+    }
+    
+    private void addInfoPreference(String text) {
+        TextView textView = new TextView(this);
+        textView.setText(text);
+        textView.setPadding(32, 16, 32, 16);
+        textView.setTextSize(14);
+        textView.setTextColor(getResources().getColor(android.R.color.darker_gray));
+        preferenceContainer.addView(textView);
     }
     
     private void addPreference(String title, String summary, View.OnClickListener listener) {

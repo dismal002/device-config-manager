@@ -78,6 +78,16 @@
             android:parentActivityName=".MainActivity" />
 
         <activity
+            android:name=".UninstallBlockedActivity"
+            android:exported="false"
+            android:parentActivityName=".MainActivity" />
+
+        <activity
+            android:name=".PolicySyncActivity"
+            android:exported="false"
+            android:parentActivityName=".MainActivity" />
+
+        <activity
             android:name=".AboutActivity"
             android:exported="false"
             android:parentActivityName=".MainActivity" />
@@ -98,6 +108,11 @@
                 <action android:name="android.app.action.DEVICE_ADMIN_ENABLED" />
             </intent-filter>
         </receiver>
+
+        <service
+            android:name=".PolicyExportService"
+            android:enabled="true"
+            android:exported="false" />
 
     </application>
 

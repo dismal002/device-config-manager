@@ -26,8 +26,25 @@ public class PasswordSettingsActivity extends PolicyDetailActivity {
         }
     }
     
+    private void addInfoMessage(String message) {
+        TextView textView = new TextView(this);
+        textView.setText(message);
+        textView.setPadding(32, 24, 32, 24);
+        textView.setTextSize(14);
+        textView.setTextColor(getResources().getColor(android.R.color.darker_gray));
+        preferenceContainer.addView(textView);
+    }
+    
     @Override
     protected void buildPreferences(String category) {
+        // Check admin status
+        if (!policyManager.isAdminActive()) {
+            addInfoMessage("Device Admin privileges required to set password policies. Please enable Device Admin first.");
+            return;
+        }
+        
+        addInfoMessage("Configure password requirements for the device. Changes apply when you tap 'Apply Password Policies'.");
+        
         // Password Quality
         String[] passwordQualities = {"Unspecified", "Something", "Numeric Complex", "Alphanumeric", "Complex"};
         View passwordQualityView = addSpinnerPreference(
@@ -108,14 +125,24 @@ public class PasswordSettingsActivity extends PolicyDetailActivity {
     private void applyPasswordPolicies() {
         boolean allSuccess = true;
         
-        // Apply Password Quality
+        // Apply Password Quality using literal values to avoid constant resolution issues
         int quality = 0;
         switch (selectedPasswordQuality) {
-            case 0: quality = 0; break; // PASSWORD_QUALITY_UNSPECIFIED
-            case 1: quality = 0x20000; break; // PASSWORD_QUALITY_SOMETHING
-            case 2: quality = 0x80000; break; // PASSWORD_QUALITY_NUMERIC_COMPLEX
-            case 3: quality = 0x40000; break; // PASSWORD_QUALITY_ALPHANUMERIC
-            case 4: quality = 0x100000; break; // PASSWORD_QUALITY_COMPLEX
+            case 0: 
+                quality = 0x00000; // PASSWORD_QUALITY_UNSPECIFIED
+                break;
+            case 1: 
+                quality = 0x10000; // PASSWORD_QUALITY_SOMETHING
+                break;
+            case 2: 
+                quality = 0x30000; // PASSWORD_QUALITY_NUMERIC_COMPLEX
+                break;
+            case 3: 
+                quality = 0x50000; // PASSWORD_QUALITY_ALPHANUMERIC
+                break;
+            case 4: 
+                quality = 0x60000; // PASSWORD_QUALITY_COMPLEX
+                break;
         }
         if (!policyManager.setPasswordQuality(quality)) {
             allSuccess = false;

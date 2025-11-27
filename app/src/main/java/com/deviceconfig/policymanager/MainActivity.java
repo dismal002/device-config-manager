@@ -93,12 +93,20 @@ public class MainActivity extends AppCompatActivity {
         dpm = (DevicePolicyManager) getSystemService(DEVICE_POLICY_SERVICE);
         adminComponent = new ComponentName(this, DeviceAdminReceiver.class);
         
+        // Start the policy export service
+        startPolicyExportService();
+        
         ViewGroup dashboardContainer = findViewById(R.id.dashboard_container);
         
         // Add status section at top
         addStatusSection(dashboardContainer);
         
         buildDashboard(dashboardContainer);
+    }
+    
+    private void startPolicyExportService() {
+        Intent serviceIntent = new Intent(this, PolicyExportService.class);
+        startService(serviceIntent);
     }
     
     private void addStatusSection(ViewGroup container) {
@@ -171,12 +179,14 @@ public class MainActivity extends AppCompatActivity {
         usersCategory.title = "Users";
         addTile(usersCategory, "User Restrictions", "Manage user restrictions and permissions", R.drawable.ic_settings_multiuser, "USER_RESTRICTIONS");
         addTile(usersCategory, "User Profiles", "Create and manage user profiles", R.drawable.ic_settings_multiuser, "USER_PROFILES");
+        addTile(usersCategory, "Sync Policies", "Apply policies across all profiles", R.drawable.ic_settings_sync, "POLICY_SYNC");
         categories.add(usersCategory);
         
         // Other Settings Category
         DashboardCategory otherCategory = new DashboardCategory();
         otherCategory.title = "Other Settings";
         addTile(otherCategory, "Security & Device", "Camera, screen capture, and device policies", R.drawable.ic_settings_security, "OTHER_SETTINGS");
+        addTile(otherCategory, "Block Uninstall", "Prevent apps from being uninstalled", R.drawable.ic_settings_applications, "UNINSTALL_BLOCKED");
         categories.add(otherCategory);
         
         // About Category
@@ -231,9 +241,19 @@ public class MainActivity extends AppCompatActivity {
                 category = "User Profiles";
                 break;
                 
+            case "POLICY_SYNC":
+                intent = new Intent(this, PolicySyncActivity.class);
+                category = "Sync Policies";
+                break;
+                
             case "OTHER_SETTINGS":
                 intent = new Intent(this, OtherSettingsActivity.class);
                 category = "Other Settings";
+                break;
+                
+            case "UNINSTALL_BLOCKED":
+                intent = new Intent(this, UninstallBlockedActivity.class);
+                category = "Block Uninstall";
                 break;
                 
             case "ABOUT":
@@ -486,11 +506,11 @@ public class MainActivity extends AppCompatActivity {
             int passwordQualityPos = passwordQualitySpinner.getSelectedItemPosition();
             int passwordQuality = 0;
             switch (passwordQualityPos) {
-                case 0: passwordQuality = DevicePolicyManager.PASSWORD_QUALITY_UNSPECIFIED; break;
-                case 1: passwordQuality = DevicePolicyManager.PASSWORD_QUALITY_SOMETHING; break;
-                case 2: passwordQuality = DevicePolicyManager.PASSWORD_QUALITY_NUMERIC_COMPLEX; break;
-                case 3: passwordQuality = DevicePolicyManager.PASSWORD_QUALITY_ALPHANUMERIC; break;
-                case 4: passwordQuality = DevicePolicyManager.PASSWORD_QUALITY_COMPLEX; break;
+                case 0: passwordQuality = 0x00000; break; // PASSWORD_QUALITY_UNSPECIFIED
+                case 1: passwordQuality = 0x10000; break; // PASSWORD_QUALITY_SOMETHING
+                case 2: passwordQuality = 0x30000; break; // PASSWORD_QUALITY_NUMERIC_COMPLEX
+                case 3: passwordQuality = 0x50000; break; // PASSWORD_QUALITY_ALPHANUMERIC
+                case 4: passwordQuality = 0x60000; break; // PASSWORD_QUALITY_COMPLEX
             }
             if (policyManager.setPasswordQuality(passwordQuality)) successCount++;
             else failCount++;

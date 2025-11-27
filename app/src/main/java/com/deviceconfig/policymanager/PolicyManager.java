@@ -15,12 +15,23 @@ public class PolicyManager {
     private UserManager um;
     private ComponentName adminComponent;
     private Context context;
+    private boolean autoExport = true;
 
     public PolicyManager(Context context) {
         this.context = context;
         this.dpm = (DevicePolicyManager) context.getSystemService(Context.DEVICE_POLICY_SERVICE);
         this.um = (UserManager) context.getSystemService(Context.USER_SERVICE);
         this.adminComponent = new ComponentName(context, DeviceAdminReceiver.class);
+    }
+    
+    private void exportPolicyState() {
+        if (autoExport) {
+            try {
+                new PolicyExporter(context).exportPolicyState();
+            } catch (Exception e) {
+                Log.e(TAG, "Error auto-exporting policy state", e);
+            }
+        }
     }
 
     public boolean isDeviceOwner() {
@@ -36,6 +47,7 @@ public class PolicyManager {
         try {
             if (isDeviceOwner()) {
                 dpm.setCameraDisabled(adminComponent, disable);
+                exportPolicyState();
                 return true;
             }
         } catch (Exception e) {
@@ -59,6 +71,7 @@ public class PolicyManager {
         try {
             if (isDeviceOwner()) {
                 dpm.setScreenCaptureDisabled(adminComponent, disable);
+                exportPolicyState();
                 return true;
             }
         } catch (Exception e) {
@@ -117,6 +130,7 @@ public class PolicyManager {
         try {
             if (isAdminActive()) {
                 dpm.setPasswordQuality(adminComponent, quality);
+                exportPolicyState();
                 return true;
             }
         } catch (Exception e) {
@@ -275,6 +289,7 @@ public class PolicyManager {
         try {
             if (isDeviceOwner()) {
                 dpm.addUserRestriction(adminComponent, restriction);
+                exportPolicyState();
                 return true;
             }
         } catch (Exception e) {
@@ -287,6 +302,7 @@ public class PolicyManager {
         try {
             if (isDeviceOwner()) {
                 dpm.clearUserRestriction(adminComponent, restriction);
+                exportPolicyState();
                 return true;
             }
         } catch (Exception e) {
@@ -323,10 +339,22 @@ public class PolicyManager {
         try {
             if (isDeviceOwner()) {
                 dpm.setUninstallBlocked(adminComponent, packageName, blocked);
+                exportPolicyState();
                 return true;
             }
         } catch (Exception e) {
             Log.e(TAG, "Error setting uninstall blocked", e);
+        }
+        return false;
+    }
+
+    public boolean isUninstallBlocked(String packageName) {
+        try {
+            if (isDeviceOwner()) {
+                return dpm.isUninstallBlocked(null, packageName);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error checking uninstall blocked", e);
         }
         return false;
     }
@@ -346,6 +374,7 @@ public class PolicyManager {
         try {
             if (isDeviceOwner()) {
                 dpm.setOrganizationName(adminComponent, name);
+                exportPolicyState();
                 return true;
             }
         } catch (Exception e) {
@@ -370,6 +399,7 @@ public class PolicyManager {
         try {
             if (isDeviceOwner()) {
                 dpm.setNetworkLoggingEnabled(adminComponent, enabled);
+                exportPolicyState();
                 return true;
             }
         } catch (Exception e) {
