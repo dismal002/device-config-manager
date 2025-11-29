@@ -19,6 +19,10 @@ public class OtherSettingsActivity extends PolicyDetailActivity {
     private Spinner permissionPolicySpinner;
     private EditText adbEnabledInput;
     private EditText usbMassStorageInput;
+    private boolean isLoadingValues = true;
+    
+    private AdapterView.OnItemSelectedListener systemUpdateListener;
+    private AdapterView.OnItemSelectedListener permissionPolicyListener;
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,16 +60,11 @@ public class OtherSettingsActivity extends PolicyDetailActivity {
         );
         disableScreenCaptureSwitch = screenCaptureView.findViewById(R.id.switchWidget);
         
-        // System Update Policy
-        String[] updatePolicies = {"Automatic", "Postponed", "Windowed"};
-        View updatePolicyView = addSpinnerPreference(
-            "System Update Policy",
-            "Control how system updates are handled",
-            updatePolicies,
-            0,
-            new AdapterView.OnItemSelectedListener() {
-                @Override
-                public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+        // Create spinner listeners (but don't attach yet)
+        systemUpdateListener = new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (!isLoadingValues) {
                     int policy = 0;
                     switch (position) {
                         case 0: policy = 0; break; // SYSTEM_UPDATE_POLICY_TYPE_INSTALL_AUTOMATIC
@@ -74,24 +73,19 @@ public class OtherSettingsActivity extends PolicyDetailActivity {
                     }
                     boolean success = policyManager.setSystemUpdatePolicy(policy);
                     showToast(success ? "System update policy updated" : "Failed to update system update policy");
+                } else {
+                    android.util.Log.d("OtherSettings", "Ignoring system update policy change during load");
                 }
-                
-                @Override
-                public void onNothingSelected(AdapterView<?> parent) {}
             }
-        );
-        systemUpdatePolicySpinner = updatePolicyView.findViewById(R.id.spinner);
+            
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {}
+        };
         
-        // Permission Policy
-        String[] permissionPolicies = {"Prompt", "Auto Grant", "Auto Deny"};
-        View permissionPolicyView = addSpinnerPreference(
-            "Permission Policy",
-            "Default action for permission requests",
-            permissionPolicies,
-            0,
-            new AdapterView.OnItemSelectedListener() {
-                @Override
-                public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+        permissionPolicyListener = new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (!isLoadingValues) {
                     int policy = 0;
                     switch (position) {
                         case 0: policy = 0; break; // PERMISSION_POLICY_PROMPT
@@ -100,11 +94,34 @@ public class OtherSettingsActivity extends PolicyDetailActivity {
                     }
                     boolean success = policyManager.setPermissionPolicy(policy);
                     showToast(success ? "Permission policy updated" : "Failed to update permission policy");
+                } else {
+                    android.util.Log.d("OtherSettings", "Ignoring permission policy change during load");
                 }
-                
-                @Override
-                public void onNothingSelected(AdapterView<?> parent) {}
             }
+            
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {}
+        };
+        
+        // System Update Policy - create without listener
+        String[] updatePolicies = {"Automatic", "Postponed", "Windowed"};
+        View updatePolicyView = addSpinnerPreference(
+            "System Update Policy",
+            "Control how system updates are handled",
+            updatePolicies,
+            -1,  // Don't set initial selection
+            null  // Don't attach listener yet
+        );
+        systemUpdatePolicySpinner = updatePolicyView.findViewById(R.id.spinner);
+        
+        // Permission Policy - create without listener
+        String[] permissionPolicies = {"Prompt", "Auto Grant", "Auto Deny"};
+        View permissionPolicyView = addSpinnerPreference(
+            "Permission Policy",
+            "Default action for permission requests",
+            permissionPolicies,
+            -1,  // Don't set initial selection
+            null  // Don't attach listener yet
         );
         permissionPolicySpinner = permissionPolicyView.findViewById(R.id.spinner);
         
@@ -291,5 +308,82 @@ public class OtherSettingsActivity extends PolicyDetailActivity {
                 showToast(success ? "Mount physical media policy updated" : "Failed to update mount physical media policy");
             }
         );
+        
+        // Load current spinner values after UI is ready
+        systemUpdatePolicySpinner.post(() -> {
+            loadCurrentPolicies();
+        });
+    }
+    
+    private void loadCurrentPolicies() {
+        android.util.Log.d("OtherSettings", "=== loadCurrentPolicies START ===");
+        
+        // Set loading flag FIRST
+        isLoadingValues = true;
+        
+        // Remove any listeners
+        systemUpdatePolicySpinner.setOnItemSelectedListener(null);
+        permissionPolicySpinner.setOnItemSelectedListener(null);
+        
+        try {
+            android.app.admin.DevicePolicyManager dpm = (android.app.admin.DevicePolicyManager) 
+                getSystemService(DEVICE_POLICY_SERVICE);
+            android.content.ComponentName adminComponent = new android.content.ComponentName(
+                this, DeviceAdminReceiver.class);
+            
+            // Load system update policy
+            int systemUpdatePosition = 0; // default to Automatic
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+                android.app.admin.SystemUpdatePolicy policy = dpm.getSystemUpdatePolicy();
+                if (policy != null) {
+                    int policyType = policy.getPolicyType();
+                    android.util.Log.d("OtherSettings", "System update policy type: " + policyType);
+                    // Map policy type to spinner position
+                    // Spinner: 0=Automatic, 1=Postponed, 2=Windowed
+                    // Policy: 0=Automatic, 1=Windowed, 2=Postponed
+                    switch (policyType) {
+                        case android.app.admin.SystemUpdatePolicy.TYPE_INSTALL_AUTOMATIC:
+                            systemUpdatePosition = 0;
+                            break;
+                        case android.app.admin.SystemUpdatePolicy.TYPE_POSTPONE:
+                            systemUpdatePosition = 1;
+                            break;
+                        case android.app.admin.SystemUpdatePolicy.TYPE_INSTALL_WINDOWED:
+                            systemUpdatePosition = 2;
+                            break;
+                        default:
+                            systemUpdatePosition = 0;
+                            break;
+                    }
+                } else {
+                    android.util.Log.d("OtherSettings", "No system update policy set");
+                }
+            }
+            
+            // Load permission policy
+            int permissionPolicy = dpm.getPermissionPolicy(adminComponent);
+            android.util.Log.d("OtherSettings", "Permission policy: " + permissionPolicy);
+            if (permissionPolicy < 0 || permissionPolicy > 2) {
+                permissionPolicy = 0;
+            }
+            
+            android.util.Log.d("OtherSettings", "Setting spinners - System Update: " + systemUpdatePosition + ", Permission: " + permissionPolicy);
+            
+            // Set spinner values
+            systemUpdatePolicySpinner.setSelection(systemUpdatePosition, false);
+            permissionPolicySpinner.setSelection(permissionPolicy, false);
+            
+        } catch (Exception e) {
+            android.util.Log.e("OtherSettings", "Error loading policies", e);
+        }
+        
+        // Attach listeners after delay
+        systemUpdatePolicySpinner.postDelayed(() -> {
+            android.util.Log.d("OtherSettings", "Attaching listeners");
+            systemUpdatePolicySpinner.setOnItemSelectedListener(systemUpdateListener);
+            permissionPolicySpinner.setOnItemSelectedListener(permissionPolicyListener);
+            isLoadingValues = false;
+            android.util.Log.d("OtherSettings", "=== loadCurrentPolicies COMPLETE ===");
+        }, 500);
     }
 }

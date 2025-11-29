@@ -120,6 +120,64 @@ public class PasswordSettingsActivity extends PolicyDetailActivity {
         applyButtonTitle.setText("Apply Password Policies");
         applyButtonView.setOnClickListener(v -> applyPasswordPolicies());
         preferenceContainer.addView(applyButtonView);
+        
+        // Load current values
+        loadCurrentPasswordPolicies();
+    }
+    
+    private void loadCurrentPasswordPolicies() {
+        try {
+            android.app.admin.DevicePolicyManager dpm = (android.app.admin.DevicePolicyManager) 
+                getSystemService(DEVICE_POLICY_SERVICE);
+            android.content.ComponentName adminComponent = new android.content.ComponentName(
+                this, DeviceAdminReceiver.class);
+            
+            // Load password quality
+            int currentQuality = dpm.getPasswordQuality(adminComponent);
+            int spinnerPosition = 0;
+            switch (currentQuality) {
+                case 0x00000: // PASSWORD_QUALITY_UNSPECIFIED
+                    spinnerPosition = 0;
+                    break;
+                case 0x10000: // PASSWORD_QUALITY_SOMETHING
+                    spinnerPosition = 1;
+                    break;
+                case 0x30000: // PASSWORD_QUALITY_NUMERIC_COMPLEX
+                    spinnerPosition = 2;
+                    break;
+                case 0x50000: // PASSWORD_QUALITY_ALPHANUMERIC
+                    spinnerPosition = 3;
+                    break;
+                case 0x60000: // PASSWORD_QUALITY_COMPLEX
+                    spinnerPosition = 4;
+                    break;
+            }
+            passwordQualitySpinner.setSelection(spinnerPosition);
+            selectedPasswordQuality = spinnerPosition;
+            
+            // Load password minimum length
+            int minLength = dpm.getPasswordMinimumLength(adminComponent);
+            passwordMinLengthInput.setText(String.valueOf(minLength));
+            
+            // Load password minimum numeric
+            int minNumeric = dpm.getPasswordMinimumNumeric(adminComponent);
+            passwordMinNumericInput.setText(String.valueOf(minNumeric));
+            
+            // Load password history length
+            int historyLength = dpm.getPasswordHistoryLength(adminComponent);
+            passwordHistoryLengthInput.setText(String.valueOf(historyLength));
+            
+            // Load password expiration timeout
+            long expirationTimeout = dpm.getPasswordExpirationTimeout(adminComponent);
+            passwordExpirationInput.setText(String.valueOf(expirationTimeout));
+            
+            // Load max failed passwords
+            int maxFailed = dpm.getMaximumFailedPasswordsForWipe(adminComponent);
+            maxFailedPasswordsInput.setText(String.valueOf(maxFailed));
+            
+        } catch (Exception e) {
+            android.util.Log.e("PasswordSettings", "Error loading current password policies", e);
+        }
     }
     
     private void applyPasswordPolicies() {

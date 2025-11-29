@@ -92,21 +92,38 @@ public class PolicyManager {
     }
 
     public boolean setSystemUpdatePolicy(int policyType) {
+        Log.d(TAG, "setSystemUpdatePolicy called with type: " + policyType);
         try {
-            if (isDeviceOwner()) {
-                // Policy types: 0 = automatic, 1 = windowed, 2 = postponed
-                android.app.admin.SystemUpdatePolicy policy = null;
-                if (policyType == 0) {
-                    policy = android.app.admin.SystemUpdatePolicy.createAutomaticInstallPolicy();
-                } else if (policyType == 1) {
-                    policy = android.app.admin.SystemUpdatePolicy.createWindowedInstallPolicy(0, 0);
-                } else if (policyType == 2) {
-                    policy = android.app.admin.SystemUpdatePolicy.createPostponeInstallPolicy();
-                }
-                if (policy != null) {
-                    dpm.setSystemUpdatePolicy(adminComponent, policy);
-                    return true;
-                }
+            if (!isDeviceOwner()) {
+                Log.e(TAG, "Not a device owner - cannot set system update policy");
+                return false;
+            }
+            
+            if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.M) {
+                Log.e(TAG, "System update policy requires API 23+");
+                return false;
+            }
+            
+            // Policy types: 0 = automatic, 1 = windowed, 2 = postponed
+            android.app.admin.SystemUpdatePolicy policy = null;
+            if (policyType == 0) {
+                policy = android.app.admin.SystemUpdatePolicy.createAutomaticInstallPolicy();
+                Log.d(TAG, "Created AUTOMATIC policy");
+            } else if (policyType == 1) {
+                policy = android.app.admin.SystemUpdatePolicy.createWindowedInstallPolicy(0, 0);
+                Log.d(TAG, "Created WINDOWED policy");
+            } else if (policyType == 2) {
+                policy = android.app.admin.SystemUpdatePolicy.createPostponeInstallPolicy();
+                Log.d(TAG, "Created POSTPONE policy");
+            }
+            
+            if (policy != null) {
+                dpm.setSystemUpdatePolicy(adminComponent, policy);
+                Log.d(TAG, "System update policy set successfully");
+                exportPolicyState();
+                return true;
+            } else {
+                Log.e(TAG, "Failed to create system update policy");
             }
         } catch (Exception e) {
             Log.e(TAG, "Error setting system update policy", e);
@@ -389,8 +406,11 @@ public class PolicyManager {
                 CharSequence name = dpm.getOrganizationName(adminComponent);
                 return name != null ? name.toString() : "";
             }
+        } catch (SecurityException e) {
+            // This is expected in device owner mode - organization name only works in managed profiles
+            Log.d(TAG, "Organization name not available (only supported in managed profiles)");
         } catch (Exception e) {
-            Log.e(TAG, "Error getting organization name", e);
+            Log.w(TAG, "Error getting organization name", e);
         }
         return "";
     }

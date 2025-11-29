@@ -179,7 +179,7 @@ public class MainActivity extends AppCompatActivity {
         usersCategory.title = "Users";
         addTile(usersCategory, "User Restrictions", "Manage user restrictions and permissions", R.drawable.ic_settings_multiuser, "USER_RESTRICTIONS");
         addTile(usersCategory, "User Profiles", "Create and manage user profiles", R.drawable.ic_settings_multiuser, "USER_PROFILES");
-        addTile(usersCategory, "Sync Policies", "Apply policies across all profiles", R.drawable.ic_settings_sync, "POLICY_SYNC");
+        addTile(usersCategory, "Policy Configuration", "View and export policy settings", R.drawable.ic_settings_sync, "POLICY_SYNC");
         categories.add(usersCategory);
         
         // Other Settings Category
@@ -243,7 +243,7 @@ public class MainActivity extends AppCompatActivity {
                 
             case "POLICY_SYNC":
                 intent = new Intent(this, PolicySyncActivity.class);
-                category = "Sync Policies";
+                category = "Policy Configuration";
                 break;
                 
             case "OTHER_SETTINGS":
